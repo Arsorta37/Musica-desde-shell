@@ -149,7 +149,7 @@ int main() {
             }
             else if (c == "b") {
                 if (cmd.tieneValor) {
-                    player.buscarCancion(cmd.valor);
+                    indiceCancion = player.buscarCancion(cmd.valor);
                     if (indiceCancion != -1) {
                         std::cout << "\033[2K\r" << "Quieres reproducir la cancion "
                          << VERDE << player.tituloIndice(indiceCancion) << RESET << "? [y/n]";
