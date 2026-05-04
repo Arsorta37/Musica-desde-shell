@@ -37,6 +37,11 @@
     }
 #endif
 
+std::string secToString(const float sec) {
+    int min = (int)sec / 60, sg = (int)sec % 60;
+    return std::to_string(min) + ":" + (sg < 10 ? "0" : "") + std::to_string(sg);
+}
+
 // Reserva las 3 líneas de la UI
 void iniciarUI() {
     #ifndef _WIN32
@@ -53,18 +58,13 @@ void iniciarUI() {
 
 void actualizarUI(const std::string& infoCancion, float pos, float dur,
                   const std::string& prompt, const std::string& inputActual, int ancho = 50) {
-    auto fmt = [](float s) {
-        int m = (int)s / 60, sg = (int)s % 60;
-        return std::to_string(m) + ":" + (sg < 10 ? "0" : "") + std::to_string(sg);
-    };
-
     float pct = dur > 0 ? pos / dur : 0;
     int relleno = (int)(pct * ancho);
 
-    std::string barra = VERDE + fmt(pos) + RESET + " [" + VERDE;
+    std::string barra = VERDE + secToString(pos) + RESET + " [" + VERDE;
     for (int i = 0; i < ancho; i++)
         barra += (i < relleno ? '=' : (i == relleno ? '>' : ' '));
-    barra = barra + RESET + "] " + AZUL + fmt(dur) + RESET;
+    barra = barra + RESET + "] " + AZUL + secToString(dur) + RESET;
 
     int filas = obtenerFilasTerminal();
     std::cout
