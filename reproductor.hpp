@@ -342,10 +342,7 @@ public:
         if (duracion) {
             float duracion = 0.0f; // Calculamos los minutos y segundos que va a durar
             ma_sound_get_length_in_seconds(&sonido, &duracion);
-            std::string min = std::to_string((int)duracion / 60);
-            std::string seg = std::to_string((int)duracion % 60);
-            if ((int)duracion % 60 < 10) seg = "0" + seg;
-            info += " (" + (std::string)AZUL + min + ":" + seg + RESET + ")";
+            info += " (" + (std::string)AZUL + secToString(duracion) + RESET + ")";
         }
         return info;
     }
@@ -466,7 +463,6 @@ public:
         } else {
             ventanaReproduccion.push_back(0);
         }
-
         reproducirActual();
     }
 
