@@ -23,18 +23,18 @@ int toInt(const std::string& s, int defecto = 1) {
 // Muestra por pantalla los controles
 void mostrarControles() {
     std::cout << "Comandos (Esta ayuda se muestra con 'H' o \"help\"):" << std::endl
-        << "Espacio: Play/Pause     | 0: Salir    | +/-/= [%]: Cambiar \% de volumen" << std::endl
+        << "Espacio: Play/Pause     | 0: Salir    | +/-/= [%]: Cambiar \% de volumen     | Clear: Limpiar terminal" << std::endl
         << "Q [sec]: Echar atras    | W: Autoplay | E [sec]: Adelantar | I: Ir a cancion | R: Reiniciar  | P: Playlist" << std::endl
         << "A [num]: Anterior       | S: Shuffle  | D [num]: Siguiente | F: Explorador   | L: Loop  " << std::endl
-        << "C [str]: Cargar carpeta | B: Buscar   | V [num]: Velocidad | M: Mostrar canciones" << std::endl
-        << "Clear: Limpiar terminal |" << std::endl;
+        << " | B: Buscar   | V [num]: Velocidad | M: Mostrar canciones" << std::endl
+        << "C [str]: Cargar carpeta | C -a [str]: Añadir canciones     | C -p [str]: Seleccionar playlist" << std::endl;
 }
 
 // Programa reproductor de música dentro de una carpeta
 int main() {
     Player player;
     bool autoplay = true, esperandoCarpeta = false, esperandoBusqueda = false, esperandoConfirmacionBusqueda = false,
-         esperandoSeleccion = false, cambiarPrompt = false;
+         esperandoSeleccion = false, cambiarPrompt = false, reiniciarReproductor = false;
     int indiceCancion = 0;
     std::string linea, nuevoPrompt = "", promptActual = "> ";
 
@@ -64,7 +64,7 @@ int main() {
                     cambiarPrompt = true;
                     nuevoPrompt = "> ";
                 } else {
-                    player.cargarCarpeta(linea);
+                    player.cargarCarpeta(linea, reiniciarReproductor);
                     // Solo volvemos al prompt normal si la carga tuvo éxito
                     if (!player.playerVacioSilencioso()) {
                         esperandoCarpeta = false;
@@ -124,11 +124,10 @@ int main() {
             else if (c == "r") player.reiniciar();
             else if (c == "v") player.cambiarPitch(cmd.tieneValor ? toFloat(cmd.valor) : 1.0f);
             else if (c == "p") std::cout << "Comando en desarrollo (Cargar canciones de una playlist en concreto)" << std::endl;
-            else if (c == "t") std::cout << "Comando en desarrollo (Comando por decidir)" << std::endl;
+            else if (c == "t") std::cout << "Comando en desarrollo (Mostrar artistas)" << std::endl;
             else if (c == "g") std::cout << "Comando en desarrollo (Comando por decidir)" << std::endl;
             else if (c == "j") std::cout << "Comando en desarrollo (Comando por decidir)" << std::endl;
             else if (c == "k") std::cout << "Comando en desarrollo (Comando por decidir)" << std::endl;
-            else if (c == "x") std::cout << "Comando en desarrollo (Mostrar artistas)" << std::endl;
             else if (c == "w") {
                 if (autoplay) std::cout << "Reproduccion automatica desactivada" << std::endl;
                     else      std::cout << "Reproduccion automatica activada" << std::endl;
@@ -138,13 +137,14 @@ int main() {
                 player.iniciarExplorador(cmd.tieneValor ? cmd.valor : "");
                 esperandoSeleccion = true;
             }
-            else if (c == "c") {
-                if (cmd.tieneValor) player.cargarCarpeta(cmd.valor);
+            else if (c == "c" || c == "x") {
+                if (cmd.tieneValor) player.cargarCarpeta(cmd.valor, (c == "c"));
                 else {
                     std::cout << "Escriba el directorio donde estan sus canciones ('0' para cancelar)";
                     cambiarPrompt = true;
-                    nuevoPrompt = "Directorio donde estan las canciones: ";
                     esperandoCarpeta = true;
+                    reiniciarReproductor = (c == "c");
+                    nuevoPrompt = "Directorio donde estan las canciones: ";
                 }
             }
             else if (c == "b") {
@@ -167,7 +167,7 @@ int main() {
                     restaurarTerminal();
                 #endif
                 player.pausar();
-                std::cout << "Cerrando el programa, pulse enter para salir..." << std::endl;
+                std::cout << "Cerrando el programa..." << std::endl;
                 exit(0);
             }
             else std::cout << "Comando desconocido: " << c << std::endl;
