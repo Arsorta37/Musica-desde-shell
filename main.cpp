@@ -1,5 +1,4 @@
 #include <iostream>
-#include <string>
 #include <algorithm>
 #include <mutex>
 #include <chrono>
@@ -73,11 +72,11 @@ unsigned mostrarAlbumsEnCarpeta(const std::string& r) {
 
 // Muestra por pantalla los controles
 void mostrarControles() {
-    std::cout << "Comandos (Esta ayuda se muestra con 'H' o \"help\"):" << std::endl
-        << "Espacio: Play/Pause  | 0: Salir    | +/-/= [%]: Cambiar \% de volumen      | Clear: Limpiar terminal" << std::endl
-        << "Q [sec]: Echar atras | W: Autoplay | E [sec]: Adelantar  | I: Ir a cancion | R: Reiniciar  | P: Playlist" << std::endl
-        << "A [num]: Anterior    | S: Shuffle  | D [num]: Siguiente  | F: Explorador   | L: Loop  " << std::endl
-        << "Z / X: Por decidir   | B: Buscar   | V [num]: Velocidad  | M: Mostrar canciones" << std::endl
+    std::cout << "Comandos (Esta ayuda se muestra con 'H' o \"help\"):\n"
+        << "Espacio: Play/Pause  | 0: Salir    | +/-/= [%]: Cambiar \% de volumen       | Clear: Limpiar terminal\n"
+        << "Q [sec]: Echar atras | W: Autoplay | E [sec]: Adelantar  | I: Ir a cancion | R: Reiniciar  | P: Playlist\n"
+        << "A [num]: Anterior    | S: Shuffle  | D [num]: Siguiente  | F: Explorador   | L: Loop\n"
+        << "Z / X: Por decidir   | B: Buscar   | V [num]: Velocidad  | M: Mostrar canciones\n"
         << "C: Cargar carpeta    | C -r: Reiniciar reproductor       | C -a: Cargar solo un album" << std::endl;
 }
 
@@ -202,7 +201,7 @@ int main() {
             else if (c == "l") player.toggleLoop();
             else if (c == "r") player.reiniciar();
             else if (c == "v") player.cambiarPitch(tieneValor ? toFloat(cmd.valor) : 1.0f);
-            else if (c == "p") std::cout << "Comando en desarrollo (Cargar canciones de una playlist en concreto)" << std::endl;
+            else if (c == "p") std::cout << "Comando en desarrollo (Por decidir)" << std::endl;
             else if (c == "t") std::cout << "Comando en desarrollo (Mostrar artistas)" << std::endl;
             else if (c == "g") std::cout << "Comando en desarrollo (Comando por decidir)" << std::endl;
             else if (c == "j") std::cout << "Comando en desarrollo (Comando por decidir)" << std::endl;
