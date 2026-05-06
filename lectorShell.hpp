@@ -1,3 +1,4 @@
+#pragma once
 #include <string>
 #include <sstream>
 #include <queue>
@@ -5,7 +6,7 @@
 #include <mutex>
 #include <thread>
 #include <chrono>
-
+#include <algorithm>
 #ifdef _WIN32
     #include <conio.h>
 #else
@@ -13,42 +14,58 @@
     #include <unistd.h>
 #endif
 
-#include <queue>
-
 struct Comando {
+    std::vector<char> flags;
     std::string accion;
     std::string valor;
-    bool tieneValor;
+
+    bool tieneFlag(char f) const { // Utilidad para comprobar flags
+        return std::find(flags.begin(), flags.end(), f) != flags.end();
+    }
 };
 
-// Convierte la lína recibida desde el cin a la clase Comando
+// Devuelve el string linea sin los espacios iniciales
+std::string quitarEspacioInicial(const std::string &linea) {
+    size_t inicio = linea.find_first_not_of(' ');
+    if (inicio != std::string::npos)
+        return linea.substr(inicio);
+    else
+        return "";
+}
+
+// Convierte la línea recibida desde el terminal a la clase Comando
 Comando parsearComando(const std::string& linea) {
     std::istringstream iss(linea);
     Comando cmd;
-    cmd.tieneValor = false;
-    cmd.valor = "";
-    iss >> cmd.accion;
-    
-    std::string resto;
-    if (std::getline(iss, resto)) {
-        // Quitamos el espacio inicial que queda tras leer la acción
-        size_t inicio = resto.find_first_not_of(' ');
-        if (inicio != std::string::npos) {
-            cmd.valor = resto.substr(inicio);
-            cmd.tieneValor = true;
+
+    // 1. Extraer la acción principal
+    if (!(iss >> cmd.accion)) return cmd;
+
+    // 2. Procesar el resto de tokens
+    std::string token;
+    while (iss >> token) {
+        if (!token.empty() && token[0] == '-') {
+            // Es un bloque de flags (ej: "-ap" o "-a")
+            for (size_t i = 1; i < token.size(); ++i)
+                cmd.flags.push_back(token[i]);
+        } else {
+            // Es parte del valor. Concatenamos por si contiene espacios
+            if (!cmd.valor.empty()) cmd.valor += " ";
+            cmd.valor += token;
         }
     }
     return cmd;
 }
 
-// Hilo lector de comandos
+// Variables globales compartidas entre hilos
 inline std::atomic<bool> inputBloqueado = false;
 inline std::string lineaActual = "";
 inline std::mutex mutexPrompt;
+
+// Hilo lector de comandos
 #ifdef _WIN32 // Para windows
     int leerComandos(std::queue<std::string>& cola, std::mutex& mtx) {
-        cola.push("h");
-        cola.push("c");
+        cola.push("h"); cola.push("c -r");
         char ch;
         while (true) {
             if (inputBloqueado) { 
@@ -82,8 +99,7 @@ inline std::mutex mutexPrompt;
     }
 
     int leerComandos(std::queue<std::string>& cola, std::mutex& mtx) {
-        cola.push("h");
-        cola.push("c");
+        cola.push("h"); cola.push("c -r");
         char ch;
         while (read(STDIN_FILENO, &ch, 1) == 1) {
             if (inputBloqueado) { 
