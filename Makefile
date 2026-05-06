@@ -14,7 +14,7 @@ else
 endif
 
 SRCS = main.cpp
-HDRS = reproductor.hpp terminal.hpp lectorShell.hpp miniaudio.h
+HDRS = reproductor.hpp terminal.hpp lectorShell.hpp lectorCanciones.hpp miniaudio.h
 
 all: $(TARGET)$(EXE)
 
