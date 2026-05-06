@@ -38,9 +38,9 @@
 #endif
 
 std::string secToString(const float sec) {
-    int min = (int)sec / 60, sg = (int)sec % 60;
-    return std::to_string(min) + ":" + (sg < 10 ? "0" : "") + std::to_string(sg);
-}
+    int m = (int)sec / 60, sg = (int)sec % 60;
+    return std::to_string(m) + ":" + (sg < 10 ? "0" : "") + std::to_string(sg);
+};
 
 // Reserva las 3 líneas de la UI
 void iniciarUI() {
