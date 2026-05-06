@@ -367,8 +367,7 @@ public:
 
         auto mostrarPagina = [&]() {
             std::cout << "\033[2J\033[1;1H"; // limpiar área
-            std::cout << "Canciones de " << MAGENTA << ruta << RESET
-                    << " (pag " << pagina+1 << "/" << totalPaginas
+            std::cout << "Canciones cargadas (pag " << pagina+1 << "/" << totalPaginas
                     << ", usa a/d para navegar, cualquier otra tecla para salir):" << std::endl;
             unsigned inicio = pagina * paginaTam;
             unsigned fin = std::min(inicio + paginaTam, total);
@@ -415,15 +414,20 @@ public:
         if (mostrar) mostrarInfoCancionActual();
     }
 
-    void cargarCarpeta(const std::string& r) {
+    // Si <reiniciar> es verdadero, vacía el reproductor. De cualquier manera, se cargan las canciones de la carpeta seleccionada
+    void cargarCarpeta(const std::string& r, const bool reiniciar=false) {
         // Vaciamos todos los vectores
-        ruta = r;
-        canciones.clear();
-        ventanaReproduccion.clear();
-        unsigned contador = 0;
-        indiceVentana = 0;
+        if (reiniciar) {
+            ruta = r;
+            canciones.clear();
+            ventanaReproduccion.clear();
+            indiceVentana = 0;
+        }
 
         // Buscamos los archivos
+        unsigned contador = 0;
+        std::vector<Cancion> cancionesNuevas;
+        cancionesNuevas.clear();
         std::cout << "\033[2K\r" << "Cargando canciones desde " << MAGENTA << r << RESET << "... ";
         try {
             for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(r)) {
@@ -431,7 +435,7 @@ public:
                     std::string path = entry.path().string();
                     if (path.ends_with(".mp3") || path.ends_with(".wav") || 
                        path.ends_with(".flac") || path.ends_with(".ogg") || path.ends_with(".opus")) {
-                        canciones.push_back(obtenerInfoCancion(path));
+                        cancionesNuevas.push_back(obtenerInfoCancion(path));
                         contador++;
                     }
                 }
@@ -441,10 +445,12 @@ public:
         if (contador == 0) { // Comprobamos la búsqueda
             std::cout << "No se ha encontrado ninguna cancion en " << MAGENTA << r << RESET << std::endl;
             return;
-        } else std::cout << AMARILLO << contador << RESET << " canciones cargadas correctamente (usa 'M' para verlas)" << std::endl;
+        }
+
+        std::cout << AMARILLO << contador << RESET << " canciones cargadas correctamente (usa 'M' para verlas)" << std::endl;
 
         // Ordenamos la lista
-        std::sort(canciones.begin(), canciones.end(), [](const Cancion& a, const Cancion& b) {
+        std::sort(cancionesNuevas.begin(), cancionesNuevas.end(), [](const Cancion& a, const Cancion& b) {
             if (a.album != b.album) { // ordena primero por album
                 if (a.album == "") return false;
                 if (b.album == "") return true;
@@ -456,14 +462,19 @@ public:
             }
         });
 
-        if (shuffle) { // Inicializamos la reproducción
-            static std::mt19937 g(std::random_device{}());
-            std::uniform_int_distribution<> dist(0, canciones.size() - 1);
-            ventanaReproduccion.push_back(dist(g));
-        } else {
-            ventanaReproduccion.push_back(0);
+        canciones.insert(canciones.end(), cancionesNuevas.begin(), cancionesNuevas.end());
+
+        if (reiniciar) {
+            if (shuffle) { // Inicializamos la reproducción
+                static std::mt19937 g(std::random_device{}());
+                std::uniform_int_distribution<> dist(0, canciones.size() - 1);
+                ventanaReproduccion.push_back(dist(g));
+            } else {
+                ventanaReproduccion.push_back(0);
+            }
+
+            reproducirActual();
         }
-        reproducirActual();
     }
 
     // Función auxiliar para reproducirSiguiente() y para obtenerIndiceRelativo()
