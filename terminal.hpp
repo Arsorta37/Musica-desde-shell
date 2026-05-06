@@ -57,6 +57,11 @@ void iniciarUI() {
               << "\033[1;1H" << std::flush; // cursor a la línea 1 (dentro del área)
 }
 
+// Variables glovales para comparar la UI
+std::string linea_cancion = "";
+std::string linea_tiempo = "";
+std::string linea_input = "";
+
 void actualizarUI(const std::string& infoCancion, float pos, float dur,
                   const std::string& prompt, const std::string& inputActual, int ancho = 50) {
     float pct = dur > 0 ? pos / dur : 0;
@@ -68,12 +73,29 @@ void actualizarUI(const std::string& infoCancion, float pos, float dur,
     barra = barra + RESET + "] " + AZUL + secToString(dur) + RESET;
 
     int filas = obtenerFilasTerminal();
-    std::cout
-        << "\033[s" // guarda posición
-        << "\033[" << filas-2 << ";1H"
-        << "\033[2K" << infoCancion << std::endl
-        << "\033[2K" << barra << std::endl
-        << "\033[2K" << prompt << inputActual
-        << "\033[u" // restaura posición (dentro del área de scroll)
-        << std::flush;
+    std::cout << "\033[s" // guarda posición
+              << "\033[" << filas-2 << ";1H";
+    
+    if (infoCancion == linea_cancion) {
+        std::cout << "\033[B"; // Bajar una fila
+    } else {
+        linea_cancion = infoCancion;
+        std::cout << "\033[2K" << infoCancion << std::endl;
+    }
+
+    if (barra == linea_tiempo) {
+        std::cout << "\033[B"; // Bajar una fila
+    } else {
+        linea_tiempo = barra;
+        std::cout << "\033[2K" << barra << std::endl;
+    }
+
+    if (prompt + inputActual == linea_input) {
+        std::cout << "\033[B"; // Bajar una fila
+    } else {
+        linea_input = prompt + inputActual;
+        std::cout << "\033[2K" << prompt << inputActual;
+    }
+
+    std::cout << "\033[u" << std::flush; // restaura posición (dentro del área de scroll)
 }
