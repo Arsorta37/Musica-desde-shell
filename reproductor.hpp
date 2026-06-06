@@ -25,7 +25,7 @@ struct Explorador {
                 if (entry.is_directory())
                     subcarpetas.push_back(entry.path().string());
         } catch (...) {
-            std::cout << ROJO << "Error" << RESET << " al leer: " << ROJO << ruta << RESET << std::endl;
+            std::cout << color_Error << "Error" << RESET << " al leer: " << color_Error << ruta << RESET << std::endl;
             return;
         }
         std::sort(subcarpetas.begin(), subcarpetas.end());
@@ -83,7 +83,7 @@ public:
 
     void inicializarAudio() {
         if (ma_engine_init(NULL, &engine) != MA_SUCCESS) {
-            std::cout << ROJO << "Error" << RESET << " inicializando audio\n";
+            std::cout << color_Error << "Error" << RESET << " inicializando audio\n";
             return;
         }
     }
@@ -122,7 +122,7 @@ public:
 
     std::string tituloIndice(const int indice) {
         if (indice < 0 || (unsigned)indice >= canciones.size())
-            return (ROJO + (std::string)"Error al leer el titulo" + RESET);
+            return (color_Error + (std::string)"Error al leer el titulo" + RESET);
         return CorregirTitulo(canciones[indice].ruta, canciones[indice].titulo);
     }
 
@@ -160,7 +160,7 @@ public:
     void asignarVolumen(float delta) {
         volumen = std::clamp(delta, 0.0f, 1.0f);
         ma_engine_set_volume(&engine, volumen);
-        std::cout << "Volumen: " << AMARILLO << (int)(volumen * 100) << "%" << RESET;
+        std::cout << "Volumen: " << color_Numeros << (int)(volumen * 100) << "%" << RESET;
         if ((int)(volumen * 100) == 0) std::cout << " - (muteado)";
         else if ((int)(volumen * 100) == 33) std::cout << " - \"For those who come after\"";
         else if ((int)(volumen * 100) == 37) std::cout << " - perfecto";
@@ -180,7 +180,7 @@ public:
     // Iguala la posición a 0
     void reiniciar() {
         ma_sound_seek_to_pcm_frame(&sonido, (ma_uint64)(0 * ma_engine_get_sample_rate(&engine)));
-        std::cout << "Posicion: " << VERDE << "0s" << RESET << std::endl;
+        std::cout << "Posicion: " << color_Cancion << "0s" << RESET << std::endl;
     }
 
     // Adelantar/retroceder delta segundos
@@ -188,19 +188,19 @@ public:
         if (!haySonido) return;
         float nuevaPosicion = obtenerPosicion() + delta;
         buscar(std::max(0.0f, nuevaPosicion));
-        std::cout << "Posicion: " << VERDE << (int)nuevaPosicion << "s" << RESET << std::endl;
+        std::cout << "Posicion: " << color_Cancion << (int)nuevaPosicion << "s" << RESET << std::endl;
     }
 
     // Cambia la velocidad (pitch) de la canción
     void cambiarPitch(float pitch) {
         if (!haySonido) return;
         ma_sound_set_pitch(&sonido, pitch);
-        std::cout << "Velocidad: " << AMARILLO << "x" << pitch << RESET << std::endl;
+        std::cout << "Velocidad: " << color_Numeros << "x" << pitch << RESET << std::endl;
     }
 
     // Reproduce la canción en la posición <indice> en el vector <canciones>
     void reproducirIndice(const int indice, const bool mostrar=true) {
-        if (playerVacio()) return;
+        if (playerVacio() || ventanaReproduccion.empty()) return;
         if (indice < 0 || (unsigned)indice >= canciones.size()) return;
         ventanaReproduccion.push_back(indice);
         indiceVentana = ventanaReproduccion.size() - 1;
@@ -220,7 +220,7 @@ public:
 
             if (tituloLower.find(queryLower) != std::string::npos) return i;
         }
-        std::cout << "No se encontro ninguna cancion con \"" << ROJO << query << RESET << "\"" << std::endl;
+        std::cout << "No se encontro ninguna cancion con \"" << color_Error << query << RESET << "\"" << std::endl;
         return -1;
     }
 
@@ -233,7 +233,7 @@ public:
         size_t barra = std::string::npos;
         if (barra1 != std::string::npos) barra = barra1;
         if (barra2 != std::string::npos && (barra == std::string::npos || barra2 > barra)) barra = barra2;
-        if (barra != std::string::npos) resultado = ruta.substr(barra + 1);
+        if (barra  != std::string::npos) resultado = ruta.substr(barra + 1);
         return resultado;
     }
 
@@ -250,21 +250,21 @@ public:
         if (duracion) {
             float duracion = 0.0f; // Calculamos los minutos y segundos que va a durar
             ma_sound_get_length_in_seconds(&sonido, &duracion);
-            info += " (" + (std::string)AZUL + secToString(duracion) + RESET + ")";
+            info += " (" + color_Duracion + secToString(duracion) + RESET + ")";
         }
         return info;
     }
 
     // Muestra el album, la pista, el título y la duración de la canción que está sonando actualmente
     void mostrarInfoCancionActual() const {
-        std::cout << VERDE << NEGRITA << "Sonando: " << RESET << obtenerInfoActual(true) << std::endl;
+        std::cout << color_Cancion << NEGRITA << "Sonando: " << RESET << obtenerInfoActual(true) << std::endl;
     }
 
     // Muestra todas las canciones del vector <canciones>
     void mostrarCanciones() const {
-        if (playerVacio()) return;
+        if (playerVacio() || ventanaReproduccion.empty()) return;
         int filas = obtenerFilasTerminal();
-        int paginaTam = filas - 6; // líneas disponibles menos UI y margen
+        int paginaTam = filas - 5; // líneas disponibles: total menos UI (4 filas) y cabecera
         unsigned total = canciones.size();
         unsigned pagina = 0;
         unsigned totalPaginas = (total + paginaTam - 1) / paginaTam;
@@ -274,7 +274,7 @@ public:
         pagina = actual / paginaTam;
 
         auto mostrarPagina = [&]() {
-            std::cout << "\033[2J\033[1;1H"; // limpiar área
+            reiniciarAreaScroll();
             std::cout << "Canciones cargadas (pag " << pagina+1 << "/" << totalPaginas
                     << ", usa a/d para navegar, cualquier otra tecla para salir):" << std::endl;
             unsigned inicio = pagina * paginaTam;
@@ -283,8 +283,9 @@ public:
                 const Cancion& c = canciones[i];
                 std::string marca = (i == ventanaReproduccion[indiceVentana]) ? "\033[32m>>\033[0m" : "  ";
                 std::cout << marca << std::setfill(' ') << std::setw(3) << i+1 << ". " << CorregirTitulo(c.ruta, c.titulo);
-                if (!c.album.empty() || !c.pista.empty()) // Solo escribimos el album y pista si existen
-                    std::cout << " - " << CYAN << (c.album.empty() ? "?" : c.album) << RESET << " [" << (c.pista.empty() ? "?" : c.pista) << "]";
+                if (!c.album.empty() || !c.pista.empty())
+                    std::cout << " - " << color_Album << (c.album.empty() ? "?" : c.album)
+                     << RESET << " [" << (c.pista.empty() ? "?" : c.pista) << "]";
                 std::cout << std::endl;
             }
         };
@@ -304,21 +305,26 @@ public:
             else if (ch == 'a') { if (pagina > 0) {pagina--; mostrarPagina();} }
             else break; // cualquier otra tecla sale
         }
-        std::cout << "\033[2J\033[1;1H" << std::flush; // limpiar al salir
+        reiniciarAreaScroll();
         inputBloqueado = false; // desbloquear hilo de input
     }
 
     // Se empieza a reproducir la canción a la que apunta el índice y muestra su información si no está puesto a false
     void reproducirActual(const bool mostrar=true) {
-        if (playerVacio()) return;
+        if (playerVacio() || ventanaReproduccion.empty()) return;
         std::string r = canciones[ventanaReproduccion[indiceVentana]].ruta;
         if (haySonido) ma_sound_uninit(&sonido);
-        if (ma_sound_init_from_file(&engine, r.c_str(), 0, NULL, NULL, &sonido) != MA_SUCCESS) {
-            if (mostrar) std::cout << ROJO << "Error" << RESET << " cargando el sonido \"" << ROJO << r << RESET << "\"" << std::endl;
+
+        // Poner a 0 si pesa mucho en la ejecución (al iniciar una canción en memoria)
+        ma_uint32 flags = MA_SOUND_FLAG_DECODE;
+
+        if (ma_sound_init_from_file(&engine, r.c_str(), flags, NULL, NULL, &sonido) != MA_SUCCESS) {
+            if (mostrar) std::cout << color_Error << "Error" << RESET << " cargando el sonido \"" << color_Error << r << RESET << "\"" << std::endl;
             return;
         }
         ma_sound_start(&sonido);
         haySonido = true;
+        pausado = false;
         if (mostrar) mostrarInfoCancionActual();
     }
 
@@ -337,8 +343,8 @@ public:
         Cancion cancionActual;
         std::vector<Cancion> cancionesNuevas;
         cancionesNuevas.clear();
-        std::cout << "\033[2K\r" << "Cargando canciones desde " << MAGENTA << r << RESET;
-        if (album != "") std::cout << " del album " << CYAN << album << RESET;
+        std::cout << "\033[2K\r" << "Cargando canciones desde " << color_Carpeta << r << RESET;
+        if (album != "") std::cout << " del album " << color_Album << album << RESET;
         std::cout << "... ";
         try {
             for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(r)) {
@@ -355,13 +361,14 @@ public:
         } catch (...) { std::cout << "error al abrir el directorio" << std::endl; return;}
 
         if (cancionesNuevas.size() == 0) { // Comprobamos la búsqueda
-            std::cout << "No se ha encontrado ninguna cancion en " << MAGENTA << r << RESET;
-            if (album != "") std::cout << " del album " << CYAN << album << RESET;
+            std::cout << "No se ha encontrado ninguna cancion en " << color_Carpeta << r << RESET;
+            if (album != "") std::cout << " del album " << color_Album << album << RESET;
             std::cout << std::endl;
             return;
         }
 
-        std::cout << AMARILLO << cancionesNuevas.size() << RESET << " canciones cargadas correctamente (usa 'M' para verlas)" << std::endl;
+        std::cout << color_Numeros << cancionesNuevas.size() << RESET << " canciones cargadas correctamente (usa '"
+                  << controles_mostrar_canciones.controlesToString() << "' para verlas)" << std::endl;
 
         // Ordenamos la lista
         std::sort(cancionesNuevas.begin(), cancionesNuevas.end(), [](const Cancion& a, const Cancion& b) {
@@ -411,7 +418,7 @@ public:
     }
 
     void reproducirRelativoPositivo(const int indice=1, const bool mostrar=true) {
-        if (playerVacio()) return;
+        if (playerVacio() || ventanaReproduccion.empty()) return;
         if (indice == 0) return;
         if (indice < 0) {
             reproducirRelativoNegativo(-indice);
@@ -457,7 +464,7 @@ public:
     }
 
     void reproducirRelativoNegativo(const int indice=1, const bool mostrar=true) {
-        if (playerVacio()) return;
+        if (playerVacio() || ventanaReproduccion.empty()) return;
         if (indice == 0) return;
         if (indice < 0) {
             reproducirRelativoPositivo(-indice);
@@ -473,7 +480,7 @@ public:
     }
 
     void reproducirSiguiente(const bool mostrar=true) {
-        if (playerVacio()) return;
+        if (playerVacio() || ventanaReproduccion.empty()) return;
         if (indiceVentana == ventanaReproduccion.size() - 1) {
             // Conservamos el tamaño máximo de la ventana
             while (ventanaReproduccion.size() > MAX_VENTANA_REP) {
@@ -493,7 +500,7 @@ public:
 
     // Actualmente no se usa porque ya está reproducirRelativoNegativo()
     void reproducirAnterior(const bool mostrar=true) {
-        if (playerVacio()) return;
+        if (playerVacio() || ventanaReproduccion.empty()) return;
         if (indiceVentana <= 0) {
             indiceVentana = 0;
             if (mostrar) std::cout << "No hay canciones anteriores" << std::endl;
