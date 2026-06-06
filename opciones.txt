@@ -1,0 +1,44 @@
+// Controles (separados por espacios y todo en MINÚSCULAS):
+Salir: exit 0
+Help: help h
+Pause: 
+Clear: clear clean cls
+Vol+: +
+Vol-: -
+Vol=: =
+Autoplay: w
+Ir_a: i
+Reiniciar: r
+Atras: q
+Adelante: e
+Anterior: a
+Siguiente: d
+Shuffle: s
+Loop: l
+Explorador: f
+Buscar: b
+Velocidad: v
+Mostrar_canciones: m
+Cargar_carpeta: c
+Flag_carpeta_reiniciar: r
+Flag_carpeta_album: a
+
+// Colores:
+// Rojo=31, Verde=32, Amarillo=33, Azul=34, Magenta=35, Cyan=36
+Carpeta: 35
+Tiempo_actual: 32
+Duracion: 34
+Cancion: 32
+Numeros: 33
+Barra_progreso: 32
+Album: 36
+Error: 31
+
+// El separador puede tener más de un carácter
+Separador_UI: -
+
+// La ruta inicial puede estar vacía
+Ruta_inicial: ../Canciones
+
+// Volumen inicial:
+Vol_ini: 20
