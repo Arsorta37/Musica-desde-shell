@@ -7,6 +7,9 @@
 #include <thread>
 #include <chrono>
 #include <algorithm>
+
+#include "lectorOpciones.hpp"
+
 #ifdef _WIN32
     #include <conio.h>
 #else
@@ -44,10 +47,11 @@ Comando parsearComando(const std::string& linea) {
     // 2. Procesar el resto de tokens
     std::string token;
     while (iss >> token) {
+        // Comprobamos si es un valor o una flag
         if (!token.empty() && token[0] == '-') {
             // Es un bloque de flags (ej: "-ap" o "-a")
             for (size_t i = 1; i < token.size(); ++i)
-                cmd.flags.push_back(token[i]);
+                cmd.flags.push_back(token[i]); // Cada letra es una flag
         } else {
             // Es parte del valor. Concatenamos por si contiene espacios
             if (!cmd.valor.empty()) cmd.valor += " ";
@@ -59,13 +63,13 @@ Comando parsearComando(const std::string& linea) {
 
 // Variables globales compartidas entre hilos
 inline std::atomic<bool> inputBloqueado = false;
-inline std::string lineaActual = "";
+inline std::string input_actual = "";
 inline std::mutex mutexPrompt;
 
 // Hilo lector de comandos
 #ifdef _WIN32 // Para windows
-    int leerComandos(std::queue<std::string>& cola, std::mutex& mtx) {
-        cola.push("h"); cola.push("c -r");
+    int leerComandos(std::queue<std::string>& cola, std::mutex& mtx, const bool cargarCarpeta=true) {
+        if (cargarCarpeta) cola.push(controles_cargar_carpeta.controles[0] + " -" + flag_cargar_carpeta_reiniciar);
         char ch;
         while (true) {
             if (inputBloqueado) { 
@@ -76,14 +80,14 @@ inline std::mutex mutexPrompt;
             ch = _getch();
             if (ch == '\r') {
                 std::lock_guard<std::mutex> lock(mtx);
-                cola.push(lineaActual);
-                lineaActual = "";
+                cola.push(input_actual);
+                input_actual = "";
             } else if (ch == '\b') {
                 std::lock_guard<std::mutex> lock(mutexPrompt);
-                if (!lineaActual.empty()) lineaActual.pop_back();
+                if (!input_actual.empty()) input_actual.pop_back();
             } else {
                 std::lock_guard<std::mutex> lock(mutexPrompt);
-                lineaActual += ch;
+                input_actual += ch;
             }
         }
         return 0;
@@ -98,8 +102,8 @@ inline std::mutex mutexPrompt;
         tcsetattr(STDIN_FILENO, TCSANOW, &raw);
     }
 
-    int leerComandos(std::queue<std::string>& cola, std::mutex& mtx) {
-        cola.push("h"); cola.push("c -r");
+    int leerComandos(std::queue<std::string>& cola, std::mutex& mtx, const bool cargarCarpeta=true) {
+        if (cargarCarpeta) cola.push(controles_cargar_carpeta.controles[0] + " -" + flag_cargar_carpeta_reiniciar);
         char ch;
         while (read(STDIN_FILENO, &ch, 1) == 1) {
             if (inputBloqueado) { 
@@ -109,14 +113,14 @@ inline std::mutex mutexPrompt;
             
             if (ch == '\n' || ch == '\r') {
                 std::lock_guard<std::mutex> lock(mtx);
-                cola.push(lineaActual);
-                lineaActual = "";
+                cola.push(input_actual);
+                input_actual = "";
             } else if (ch == 127 || ch == '\b') {
                 std::lock_guard<std::mutex> lock(mutexPrompt);
-                if (!lineaActual.empty()) lineaActual.pop_back();
+                if (!input_actual.empty()) input_actual.pop_back();
             } else {
                 std::lock_guard<std::mutex> lock(mutexPrompt);
-                lineaActual += ch;
+                input_actual += ch;
             }
         }
         return 0;
